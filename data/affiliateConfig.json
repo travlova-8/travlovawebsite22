@@ -1,0 +1,21 @@
+{
+  "_comment": "DEMO VALUES. Replace 'id' with the real affiliate/partner ID you receive after approval from each program (Travelpayouts, Booking.com Affiliate Partner, etc). Never expose these on the frontend — server.js attaches them only at redirect time.",
+  "default": { "domain": "https://www.google.com/travel", "param": "ref", "id": "travlova-demo-8842" },
+  "Emirates":          { "domain": "https://www.emirates.com",        "param": "utm_ref", "id": "travlova-demo-8842" },
+  "flydubai":          { "domain": "https://www.flydubai.com",        "param": "utm_ref", "id": "travlova-demo-8842" },
+  "EgyptAir":          { "domain": "https://www.egyptair.com",        "param": "utm_ref", "id": "travlova-demo-8842" },
+  "Booking.com":       { "domain": "https://www.booking.com",         "param": "aid",      "id": "travlova-demo-8842" },
+  "Expedia":           { "domain": "https://www.expedia.com",         "param": "affid",    "id": "travlova-demo-8842" },
+  "Skyscanner":        { "domain": "https://www.skyscanner.com",      "param": "associateid","id": "travlova-demo-8842" },
+  "Trip.com":          { "domain": "https://www.trip.com",            "param": "allianceid","id": "travlova-demo-8842" },
+  "agoda":             { "domain": "https://www.agoda.com",           "param": "cid",      "id": "travlova-demo-8842" },
+  "Hotels.com":        { "domain": "https://www.hotels.com",          "param": "affid",    "id": "travlova-demo-8842" },
+  "Rentalcars.com":    { "domain": "https://www.rentalcars.com",      "param": "affiliateCode", "id": "travlova-demo-8842" },
+  "DiscoverCars":      { "domain": "https://www.discovercars.com",    "param": "a_aid",    "id": "travlova-demo-8842" },
+  "Kayak":             { "domain": "https://www.kayak.com",           "param": "a",        "id": "travlova-demo-8842" },
+  "Address Hotels":    { "domain": "https://www.addresshotels.com",   "param": "ref",      "id": "travlova-demo-8842" },
+  "Jumeirah Group":    { "domain": "https://www.jumeirah.com",        "param": "ref",      "id": "travlova-demo-8842" },
+  "Rove Hotels":       { "domain": "https://www.rovehotels.com",      "param": "ref",      "id": "travlova-demo-8842" },
+  "Sofitel":           { "domain": "https://www.sofitel.com",         "param": "ref",      "id": "travlova-demo-8842" },
+  "Emirates Holidays":  { "domain": "https://www.emiratesholidays.com","param": "ref",      "id": "travlova-demo-8842" }
+}

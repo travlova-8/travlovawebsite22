@@ -1,0 +1,13 @@
+{
+  "name": "travlova",
+  "version": "1.0.0",
+  "description": "Travlova — travel metasearch (Flights, Stays, Cars, Quick Escapes) with an affiliate redirect + click-logging backend.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
+}
