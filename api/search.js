@@ -1,6 +1,12 @@
 // Demo search API. It filters the current sample data only; it is not live hotel/flight inventory.
 const offers = require("../data/offers.json");
 const ALLOWED = new Set(["flights","stays","cars","escapes"]);
+function matchesAny(item, query) {
+  const route = item.route || {};
+  const haystack = [item.name,item.location,item.type,item.destination,route.toCity,route.toCode,route.to,route.fromCity,route.fromCode,route.from].filter(Boolean).join(" ").toLowerCase();
+  const tokens = query.replace(/\([^)]*\)/g, " ").split(/[^a-z0-9]+/i).filter(Boolean);
+  return tokens.length === 0 || tokens.some(token => haystack.includes(token));
+}
 function validDate(value) { return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value; }
 module.exports = function handler(req, res) {
   res.setHeader("Cache-Control","no-store");
@@ -18,14 +24,10 @@ module.exports = function handler(req, res) {
   const destination = String(q.destination || q.pickupLocation || q.departureCity || "").trim().toLowerCase();
   const origin = String(q.origin || "").trim().toLowerCase();
   let results = offers[type].slice();
-  if (destination) results = results.filter(item => {
-    const route = item.route || {};
-    const haystack = [item.name,item.location,item.type,item.destination,route.toCity,route.toCode,route.to].filter(Boolean).join(" ").toLowerCase();
-    return haystack.includes(destination);
-  });
+  if (destination && type !== "cars") results = results.filter(item => matchesAny(item,destination));
   if (origin && type === "flights") results = results.filter(item => {
     const route = item.route || {};
-    return [route.fromCity,route.fromCode,route.from].filter(Boolean).join(" ").toLowerCase().includes(origin);
+    return matchesAny({route},origin);
   });
   return res.status(200).json({demo:true,source:"data/offers.json",liveInventory:false,query:{type,...q},count:results.length,results});
 };
