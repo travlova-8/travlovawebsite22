@@ -289,6 +289,7 @@ async function loadResults(type, targetSelector, countSelector) {
     const offers = await res.json();
     if (!Array.isArray(offers)) throw new Error("Unexpected response format");
     loadedOffers[type] = offers;
+    document.dispatchEvent(new Event("travlova:offers-loaded"));
     if (type === "stays") { renderStayResults(offers); document.querySelector("#stays-sort")?.addEventListener("change", () => renderStayResults(loadedOffers.stays || [])); }
     else { target.innerHTML = offers.map(RENDERERS[type]).join(""); if (countEl) countEl.textContent = offers.length + " sample " + (COUNT_WORD[type] || "offers"); }
     const status = document.querySelector("#stays-status"); if (status && type === "stays") status.textContent = "Sample data loaded. Live provider inventory is not connected.";
@@ -323,6 +324,43 @@ function wireSearchForm(formSelector) {
     document.querySelector(".results-main")?.scrollIntoView({behavior:"smooth",block:"start"});
   });
 }
+
+function wireFlightSearch(selector) {
+ const form=document.querySelector(selector); if(!form) return;
+ const dep=form.elements.departDate, ret=form.elements.returnDate;
+ const now=new Date(), today=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
+ if(dep){dep.min=today;dep.value=dep.value||today;}
+ if(ret){ret.min=dep?.value||today;const d=new Date((dep?.value||today)+"T12:00:00");d.setDate(d.getDate()+7);ret.value=ret.value||new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);}
+ dep?.addEventListener("change",()=>{if(ret){ret.min=dep.value;if(ret.value && ret.value<dep.value) ret.value="";}});
+ const params=new URLSearchParams(location.search);
+ ["origin","destination","departDate","returnDate","travelers","cabin"].forEach(k=>{if(form.elements[k]&&params.has(k))form.elements[k].value=params.get(k);});
+ const render=()=>{
+  const offers=(loadedOffers.flights||[]).slice();
+  const origin=(form.elements.origin?.value||"").trim().toLowerCase(), dest=(form.elements.destination?.value||"").trim().toLowerCase();
+  const max=Number(document.querySelector("#max-price")?.value||Infinity);
+  const stops=[...document.querySelectorAll("[data-stop-filter]:checked")].map(el=>el.dataset.stopFilter);
+  let visible=offers.filter(o=>{
+   const route=o.route||{}, from=(route.fromCode+" "+route.fromCity).toLowerCase(), to=(route.toCode+" "+route.toCity).toLowerCase();
+   const price=Math.min(...(o.providers||[]).map(p=>Number(p.price??Infinity)));
+   const s=String(route.stops||"").toLowerCase(), key=s.includes("non-stop")||s.includes("nonstop")?"nonstop":s.includes("1")?"1stop":"2plus";
+   return (!origin||from.includes(origin)||origin.split(/[ (]/)[0]&&from.includes(origin.split(/[ (]/)[0]))&&(!dest||to.includes(dest)||to.includes(dest.split(/[ (]/)[0]))&&price<=max&&stops.includes(key);
+  });
+  const sort=document.querySelector("#flights-sort")?.value||"recommended";
+  const minPrice=o=>Math.min(...(o.providers||[]).map(p=>Number(p.price??Infinity)));
+  if(sort==="price-asc") visible.sort((a,b)=>minPrice(a)-minPrice(b));
+  if(sort==="duration") visible.sort((a,b)=>{const mins=o=>{const m=String(o.route?.duration||"").match(/(\d+)h\s*(\d+)?m?/);return m?Number(m[1])*60+Number(m[2]||0):99999};return mins(a)-mins(b);});
+  const target=document.querySelector("#flights-list"); if(target) target.innerHTML=visible.length?visible.map(RENDERERS.flights).join(""):'<div class="offer-card" style="padding:24px"><h3>No sample flights match these filters</h3><p>Change the route, price or stop filters. Live airline inventory is not connected.</p></div>';
+  const count=document.querySelector("#results-count"); if(count){count.textContent=visible.length+" sample flights found";const note=document.createElement("span");note.textContent="Demo prices; provider availability and fare rules are not verified.";count.appendChild(note);}
+  const label=document.querySelector("#max-price-label");if(label)label.textContent=fmt(max);
+ };
+ form.addEventListener("submit",e=>{e.preventDefault();if(!form.reportValidity())return;if(dep?.value&&ret?.value&&ret.value<dep.value){ret.setCustomValidity("Return date must be on or after departure.");ret.reportValidity();ret.setCustomValidity("");return;}const q=new URLSearchParams(new FormData(form));history.replaceState({},"",location.pathname+"?"+q);render();document.querySelector(".results-main")?.scrollIntoView({behavior:"smooth",block:"start"});});
+ document.querySelector("#flights-sort")?.addEventListener("change",render);
+ document.querySelector("#max-price")?.addEventListener("input",render);
+ document.querySelectorAll("[data-stop-filter]").forEach(el=>el.addEventListener("change",render));
+ document.querySelectorAll(".sidebar-block .clear").forEach(el=>el.addEventListener("click",()=>{el.closest(".sidebar-block")?.querySelectorAll('input[type="checkbox"]').forEach(c=>c.checked=false);render();}));
+ document.addEventListener("travlova:offers-loaded",render);
+}
+
 function wireMobileNav() {
   const toggle = document.querySelector(".mobile-toggle");
   const nav = document.querySelector(".header-nav");
@@ -330,4 +368,18 @@ function wireMobileNav() {
   toggle.addEventListener("click", () => nav.classList.toggle("open"));
 }
 
-document.addEventListener("DOMContentLoaded", wireMobileNav);
+
+const TRAVLOVA_I18N={en:{search:"Search",flights:"Flights",stays:"Stays",cars:"Cars",escapes:"Quick Escapes"},ar:{search:"ابحث",flights:"الطيران",stays:"الإقامة",cars:"السيارات",escapes:"رحلات سريعة"}};
+function applyLanguage(lang){
+ const d=TRAVLOVA_I18N[lang]||TRAVLOVA_I18N.en;document.documentElement.lang=lang;document.documentElement.dir=lang==="ar"?"rtl":"ltr";
+ const b=document.querySelector(".search-submit button");if(b)b.textContent=d.search;
+ document.querySelectorAll(".search-field label").forEach(el=>{const s=el.textContent.trim().toLowerCase();const map=lang==="ar"?{from:"من",to:"إلى",depart:"المغادرة",return:"العودة",travelers:"المسافرون"}:{من:"From","إلى":"To","المغادرة":"Depart","العودة":"Return","المسافرون":"Travelers"};if(map[s])el.textContent=map[s];});
+ document.querySelectorAll(".tab-link").forEach(el=>{const s=el.textContent.trim().toLowerCase();const key=s.includes("flight")||s==="الطيران"?"flights":s.includes("stay")||s==="الإقامة"?"stays":s.includes("car")||s==="السيارات"?"cars":s.includes("escape")||s==="رحلات سريعة"?"escapes":null;if(key&&el.lastChild)el.lastChild.textContent=" "+d[key];});
+}
+function wirePreferences(){
+ const c=document.querySelector("#currency-select"),l=document.querySelector("#language-select");
+ if(c){c.value=localStorage.getItem("travlova-currency")||c.value||"USD";c.addEventListener("change",()=>{localStorage.setItem("travlova-currency",c.value);document.dispatchEvent(new Event("travlova:currency"));Object.keys(loadedOffers).forEach(type=>{const sel={flights:"#flights-list",stays:"#stays-list",cars:"#cars-list",escapes:"#escapes-list"}[type],el=document.querySelector(sel);if(el&&loadedOffers[type])el.innerHTML=loadedOffers[type].map(RENDERERS[type]).join("");});});}
+ if(l){l.value=localStorage.getItem("travlova-language")||l.value||"en";applyLanguage(l.value);l.addEventListener("change",()=>{localStorage.setItem("travlova-language",l.value);applyLanguage(l.value);});}
+}
+
+document.addEventListener("DOMContentLoaded", () => { wireMobileNav(); wirePreferences(); });
