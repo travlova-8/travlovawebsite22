@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Travlova — Compare Hotels & Stays</title>
-<meta name="description" content="Compare hotel and stay prices across 100+ booking sites.">
+<meta name="description" content="Explore accommodation options and compare sample offers on Travlova. Live partner inventory is not connected yet.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
@@ -69,19 +69,19 @@
     <form class="search-form" id="search-form">
       <div class="search-field">
         <label>Destination</label>
-        <div class="value-row"><input type="text" value="Dubai, United Arab Emirates"><svg class="field-icon" width="16" height="16"><use href="#i-pin"/></svg></div>
+        <div class="value-row"><input id="stay-destination" name="destination" type="text" value="Dubai" placeholder="City, area or property" autocomplete="off" required><svg class="field-icon" width="16" height="16"><use href="#i-pin"/></svg></div>
       </div>
       <div class="search-field">
         <label>Check-in</label>
-        <div class="value-row"><input type="text" value="12 May, 2024"><svg class="field-icon" width="16" height="16"><use href="#i-calendar"/></svg></div>
+        <div class="value-row"><input id="stay-checkin" name="checkIn" type="date" required><svg class="field-icon" width="16" height="16"><use href="#i-calendar"/></svg></div>
       </div>
       <div class="search-field">
         <label>Check-out</label>
-        <div class="value-row"><input type="text" value="19 May, 2024"><svg class="field-icon" width="16" height="16"><use href="#i-calendar"/></svg></div>
+        <div class="value-row"><input id="stay-checkout" name="checkOut" type="date" required><svg class="field-icon" width="16" height="16"><use href="#i-calendar"/></svg></div>
       </div>
       <div class="search-field">
         <label>Guests</label>
-        <div class="value-row"><input type="text" value="2 Adults, 1 Room"><svg class="field-icon" width="16" height="16"><use href="#i-user"/></svg></div>
+        <div class="value-row"><input id="stay-guests" name="guests" type="text" value="2 Adults, 1 Room" aria-label="Guests and rooms"><svg class="field-icon" width="16" height="16"><use href="#i-user"/></svg></div>
       </div>
       <div class="search-submit">
         <button type="submit" class="btn-primary">Search</button>
@@ -91,7 +91,7 @@
 </div>
 
 <div class="disclosure-strip" style="margin-top:28px">
-  Travlova is a comparison site. When you book through a partner, we may earn a commission at no extra cost to you. <a href="/privacy-policy.html">Learn how</a>
+  Affiliate disclosure: Travlova may earn a commission when you use partner links. <a href="/privacy-policy.html#affiliate-disclosure">Learn how</a>
 </div>
 
 <main class="results-shell">
@@ -125,11 +125,13 @@
 
   <section class="results-main">
     <div class="results-head">
-      <div class="results-count" id="results-count">312 properties found<span>Prices include taxes and fees</span></div>
-      <select class="sort-select"><option>Sort by: Best Match</option><option>Price: Low to High</option><option>Guest Rating</option></select>
+      <div class="results-count" id="results-count">Sample stays<span>Sample prices only — taxes and availability are not verified</span></div>
+      <select class="sort-select" id="stays-sort" aria-label="Sort stays"><option value="recommended">Sort by: Recommended</option><option value="price-asc">Total price: Low to High</option><option value="rating-desc">Guest rating: High to Low</option></select>
     </div>
+    <div class="disclosure-strip" role="note" style="margin-bottom:12px;border-color:#F2D7A0;background:#FFFBEB;color:#854D0E">Prototype notice: these are sample offers, not live prices or confirmed availability. Partner inventory is not connected yet.</div>
+    <div id="stays-status" role="status" aria-live="polite"></div>
     <div id="stays-list">
-      <p style="padding:30px;color:var(--muted)">Loading stays…</p>
+      <p style="padding:30px;color:var(--muted)">Loading sample stays…</p>
     </div>
     <div class="promo-banner">
       <div><h4>Found a better price elsewhere?</h4><p>We'll match it and give you an extra 10% off.</p></div>
