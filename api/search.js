@@ -20,7 +20,8 @@ module.exports = function handler(req, res) {
   if (start && !validDate(start)) return res.status(400).json({error:"Invalid start date",demo:true});
   if (end && !validDate(end)) return res.status(400).json({error:"Invalid end date",demo:true});
   if (start && start < new Date().toISOString().slice(0,10)) return res.status(400).json({error:"Dates must not be in the past",demo:true});
-  if (start && end && end <= start) return res.status(400).json({error:"End date must be after start date",demo:true});
+  if (start && end && (type === "cars" ? end < start : end <= start)) return res.status(400).json({error:"End date must be after start date",demo:true});
+  if (type === "cars" && start === end && q.pickupTime && q.dropoffTime && q.dropoffTime <= q.pickupTime) return res.status(400).json({error:"Drop-off time must be later than pick-up time",demo:true});
   const destination = String(q.destination || q.pickupLocation || q.departureCity || "").trim().toLowerCase();
   const origin = String(q.origin || "").trim().toLowerCase();
   let results = offers[type].slice();
