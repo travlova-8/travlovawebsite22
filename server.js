@@ -67,12 +67,12 @@ function readJSONBody(req, maxBytes = 16384) {
   });
 }
 function validISODate(value) {
-  return typeof value === "string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value;
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value;
 }
 function matchesAny(item, query) {
   const route = item.route || {};
   const haystack = [item.name,item.location,item.type,item.destination,route.toCity,route.toCode,route.to,route.fromCity,route.fromCode,route.from].filter(Boolean).join(" ").toLowerCase();
-  const tokens = String(query).replace(/\\([^)]*\\)/g, " ").split(/[^a-z0-9]+/i).filter(Boolean);
+  const tokens = String(query).replace(/\([^)]*\)/g, " ").split(/[^a-z0-9]+/i).filter(Boolean);
   return tokens.length === 0 || tokens.some(token => haystack.includes(token));
 }
 function demoSearch(type, query) {
@@ -100,13 +100,13 @@ function validateDemoSignup(body) {
   const password = typeof body.password === "string" ? body.password : "";
   const country = typeof body.country === "string" ? body.country : "";
   if (fullName.length < 2 || fullName.length > 80) return "Full name must be 2–80 characters";
-  if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return "Enter a valid email address";
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Enter a valid email address";
   if (!["EG","DE","RU","HU","BY","PL","IT","GB","OTHER"].includes(country)) return "Choose a supported country";
   if (password.length < 12 || password.length > 128) return "Password must be 12–128 characters";
   if (body.termsAccepted !== true) return "Please accept the Terms of Service";
   return null;
 }
-\nfunction findOfferById(offerId) {
+function findOfferById(offerId) {
   for (const category of Object.keys(OFFERS)) {
     const hit = OFFERS[category].find((o) => o.id === offerId);
     if (hit) return { category, offer: hit };
