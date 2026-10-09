@@ -5,7 +5,14 @@
    real partner APIs — see Travlova-Project-Full-Guide).
    ========================================================== */
 
-function fmt(n) { return "$" + Number(n).toLocaleString("en-US"); }
+const CURRENCY_RATES = { USD:1, EUR:0.92, GBP:0.79, EGP:49.5, RUB:92, PLN:3.98, HUF:365, BYN:3.25 };
+const CURRENCY_LOCALES = { USD:"en-US", EUR:"de-DE", GBP:"en-GB", EGP:"en-EG", RUB:"ru-RU", PLN:"pl-PL", HUF:"hu-HU", BYN:"be-BY" };
+function fmt(n) {
+  const currency = document.querySelector("#currency-select")?.value || "USD";
+  const converted = Number(n) * (CURRENCY_RATES[currency] || 1);
+  try { return new Intl.NumberFormat(CURRENCY_LOCALES[currency] || "en-US", { style:"currency", currency, maximumFractionDigits: currency === "HUF" ? 0 : 2 }).format(converted); }
+  catch { return currency + " " + converted.toLocaleString("en-US"); }
+}
 
 function goHref(offerId, providerName) {
   return `/go/${encodeURIComponent(offerId)}/${encodeURIComponent(providerName)}`;
@@ -299,30 +306,109 @@ async function loadResults(type, targetSelector, countSelector) {
   }
 }
 
+function setDateMin(input, min) { if (input) input.min = min; }
+function localISODate(date) { return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0,10); }
+function setQueryFromForm(form) {
+  const q = new URLSearchParams();
+  for (const [key,value] of new FormData(form).entries()) if (String(value).trim()) q.set(key, String(value).trim());
+  window.history.replaceState({}, "", window.location.pathname + (q.toString() ? "?" + q.toString() : ""));
+}
 function wireSearchForm(formSelector) {
   const form = document.querySelector(formSelector);
   if (!form) return;
-  const checkIn = form.elements.checkIn;
-  const checkOut = form.elements.checkOut;
-  const now = new Date();
-  const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0,10);
-  if (checkIn) checkIn.min = today;
-  if (checkOut) checkOut.min = today;
-  checkIn?.addEventListener("change", () => { if (checkIn.value) { checkOut.min = checkIn.value; if (checkOut.value && checkOut.value <= checkIn.value) checkOut.value = ""; } });
+  const today = localISODate(new Date());
+  const page = document.body.dataset.page || "";
+  const dateFields = Array.from(form.querySelectorAll('input[type="date"]'));
+  dateFields.forEach(input => setDateMin(input, today));
+  const pair = page === "stays" ? ["checkIn","checkOut"] :
+    page === "cars" ? ["pickupDate","dropoffDate"] :
+    page === "flights" || page === "escapes" ? ["departDate","returnDate"] : [];
+  const first = pair.length ? form.elements[pair[0]] : null;
+  const second = pair.length ? form.elements[pair[1]] : null;
+  if (first && second) {
+    first.addEventListener("change", () => {
+      if (!first.value) return;
+      second.min = first.value;
+      if (second.value && second.value <= first.value) second.value = "";
+    });
+  }
   const params = new URLSearchParams(window.location.search);
-  ["destination","checkIn","checkOut","guests"].forEach(key => { const field = form.elements[key]; if (field && params.has(key)) field.value = params.get(key); });
-  form.addEventListener("submit", e => {
-    e.preventDefault();
+  for (const [key,value] of params.entries()) if (form.elements[key]) form.elements[key].value = value;
+  if (first && second) {
+    if (first.value) second.min = first.value;
+    if (first.value && second.value && second.value <= first.value) second.value = "";
+  }
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
     if (!form.reportValidity()) return;
-    if (checkIn.value && checkOut.value && checkOut.value <= checkIn.value) { checkOut.setCustomValidity("Check-out must be after check-in."); checkOut.reportValidity(); checkOut.setCustomValidity(""); return; }
-    const q = new URLSearchParams();
-    ["destination","checkIn","checkOut","guests"].forEach(key => { const field = form.elements[key]; if (field && field.value) q.set(key, field.value.trim()); });
-    window.history.replaceState({}, "", window.location.pathname + "?" + q.toString());
-    if (loadedOffers.stays) renderStayResults(loadedOffers.stays);
-    const status = document.querySelector("#stays-status"); if (status) status.textContent = "Showing matching sample listings only; live inventory search is not connected.";
+    if (first && second && (!first.value || !second.value || second.value <= first.value)) {
+      second.setCustomValidity("Choose a return/drop-off date after the first date.");
+      second.reportValidity(); second.setCustomValidity(""); return;
+    }
+    if (page === "cars" && form.elements.pickupTime && form.elements.dropoffTime &&
+        first.value === second.value && form.elements.dropoffTime.value <= form.elements.pickupTime.value) {
+      form.elements.dropoffTime.setCustomValidity("Drop-off time must be later than pick-up time.");
+      form.elements.dropoffTime.reportValidity(); form.elements.dropoffTime.setCustomValidity(""); return;
+    }
+    setQueryFromForm(form);
+    const apiType = ({flights:"flights",stays:"stays",cars:"cars",escapes:"escapes"})[page];
+    const targetId = ({flights:"#flights-list",stays:"#stays-list",cars:"#cars-list",escapes:"#escapes-list"})[page];
+    const countId = "#results-count";
+    const target = targetId ? document.querySelector(targetId) : null;
+    if (target && apiType) {
+      target.innerHTML = '<p style="padding:24px;color:var(--muted)">Searching demo offers…</p>';
+      try {
+        const response = await fetch("/api/search?" + new URLSearchParams({type:apiType,...Object.fromEntries(new FormData(form).entries())}));
+        if (!response.ok) throw new Error("Search request failed");
+        const data = await response.json();
+        const offers = Array.isArray(data.results) ? data.results : [];
+        loadedOffers[apiType] = offers;
+        if (page === "stays") renderStayResults(offers);
+        else target.innerHTML = offers.length ? offers.map(RENDERERS[page]).join("") : '<div style="padding:24px"><h3>No sample results found</h3><p>Try changing your search criteria.</p></div>';
+        const count = document.querySelector(countId);
+        if (count) count.textContent = offers.length + " sample " + (COUNT_WORD[apiType] || "offers");
+        const status = document.querySelector("#stays-status");
+        if (status) status.textContent = "Demo search only. Live partner inventory is not connected.";
+      } catch {
+        target.innerHTML = '<div style="padding:24px"><h3>Search temporarily unavailable</h3><p>Please retry. This prototype does not confirm live prices or availability.</p></div>';
+      }
+    } else {
+      showToast("Search criteria saved. Live search is not connected in this prototype.");
+    }
     document.querySelector(".results-main")?.scrollIntoView({behavior:"smooth",block:"start"});
   });
 }
+function wirePreferences() {
+  const currency = document.querySelector("#currency-select");
+  const language = document.querySelector("#language-select");
+  const supportedCurrencies = ["USD","EUR","GBP","EGP","RUB","PLN","HUF","BYN"];
+  const supportedLanguages = ["en","de","ru","hu","be","pl","it","ar"];
+  if (currency) {
+    const saved = localStorage.getItem("travlova-currency");
+    if (supportedCurrencies.includes(saved)) currency.value = saved;
+    currency.addEventListener("change", () => {
+      localStorage.setItem("travlova-currency", currency.value);
+      document.dispatchEvent(new CustomEvent("travlova:currencychange"));
+      document.querySelectorAll(".price").forEach(el => { el.dataset.originalPrice ||= el.textContent; });
+      showToast("Display currency updated. Conversion uses demo rates, not live FX.");
+      if (Object.keys(loadedOffers).length) {
+        const page = document.body.dataset.page;
+        const list = document.querySelector(({flights:"#flights-list",stays:"#stays-list",cars:"#cars-list",escapes:"#escapes-list"})[page]);
+        if (list && loadedOffers[page]) list.innerHTML = loadedOffers[page].map(RENDERERS[page]).join("");
+      }
+    });
+  }
+  if (language) {
+    const saved = localStorage.getItem("travlova-language");
+    if (supportedLanguages.includes(saved)) language.value = saved;
+    language.addEventListener("change", () => {
+      localStorage.setItem("travlova-language", language.value);
+      document.documentElement.lang = language.value;
+      showToast("Language preference saved. Full page translation is not yet enabled.");
+    });
+  }
+}
+
 function wireMobileNav() {
   const toggle = document.querySelector(".mobile-toggle");
   const nav = document.querySelector(".header-nav");
@@ -330,4 +416,4 @@ function wireMobileNav() {
   toggle.addEventListener("click", () => nav.classList.toggle("open"));
 }
 
-document.addEventListener("DOMContentLoaded", wireMobileNav);
+document.addEventListener("DOMContentLoaded", () => { wireMobileNav(); wirePreferences(); });
