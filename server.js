@@ -50,7 +50,60 @@ function sendJSON(res, status, data) {
   send(res, status, JSON.stringify(data), { "Content-Type": "application/json; charset=utf-8" });
 }
 
-function findOfferById(offerId) {
+
+function readJSONBody(req, maxBytes = 16384) {
+  return new Promise((resolve, reject) => {
+    let raw = "", bytes = 0;
+    req.on("data", chunk => {
+      bytes += chunk.length;
+      if (bytes > maxBytes) { reject(new Error("BODY_TOO_LARGE")); req.destroy(); return; }
+      raw += chunk;
+    });
+    req.on("end", () => {
+      if (!raw) return resolve({});
+      try { resolve(JSON.parse(raw)); } catch { reject(new Error("INVALID_JSON")); }
+    });
+    req.on("error", reject);
+  });
+}
+function validISODate(value) {
+  return typeof value === "string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value;
+}
+function demoSearch(type, query) {
+  const allowed = ["flights","stays","cars","escapes"];
+  if (!allowed.includes(type)) return { status:400, body:{demo:true,error:"type must be flights, stays, cars or escapes"} };
+  const start = query.checkIn || query.pickupDate || query.departDate;
+  const end = query.checkOut || query.dropoffDate || query.returnDate;
+  if (start && !validISODate(start)) return {status:400,body:{demo:true,error:"Invalid start date"}};
+  if (end && !validISODate(end)) return {status:400,body:{demo:true,error:"Invalid end date"}};
+  if (start && start < new Date().toISOString().slice(0,10)) return {status:400,body:{demo:true,error:"Dates must not be in the past"}};
+  if (start && end && end <= start) return {status:400,body:{demo:true,error:"End date must be after start date"}};
+  const destination = String(query.destination || query.pickupLocation || query.departureCity || "").trim().toLowerCase();
+  const origin = String(query.origin || "").trim().toLowerCase();
+  let results = OFFERS[type].slice();
+  if (destination) results = results.filter(item => {
+    const route = item.route || {};
+    return [item.name,item.location,item.type,item.destination,route.toCity,route.toCode,route.to].filter(Boolean).join(" ").toLowerCase().includes(destination);
+  });
+  if (origin && type === "flights") results = results.filter(item => {
+    const route = item.route || {};
+    return [route.fromCity,route.fromCode,route.from].filter(Boolean).join(" ").toLowerCase().includes(origin);
+  });
+  return {status:200,body:{demo:true,source:"data/offers.json",liveInventory:false,query:{type,...query},count:results.length,results}};
+}
+function validateDemoSignup(body) {
+  const email = typeof body.email === "string" ? body.email.trim() : "";
+  const fullName = typeof body.fullName === "string" ? body.fullName.trim() : "";
+  const password = typeof body.password === "string" ? body.password : "";
+  const country = typeof body.country === "string" ? body.country : "";
+  if (fullName.length < 2 || fullName.length > 80) return "Full name must be 2–80 characters";
+  if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return "Enter a valid email address";
+  if (!["EG","DE","RU","HU","BY","PL","IT","GB","OTHER"].includes(country)) return "Choose a supported country";
+  if (password.length < 12 || password.length > 128) return "Password must be 12–128 characters";
+  if (body.termsAccepted !== true) return "Please accept the Terms of Service";
+  return null;
+}
+\nfunction findOfferById(offerId) {
   for (const category of Object.keys(OFFERS)) {
     const hit = OFFERS[category].find((o) => o.id === offerId);
     if (hit) return { category, offer: hit };
@@ -145,9 +198,30 @@ function serveStatic(req, res, pathname) {
   });
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const parsed = url.parse(req.url, true);
   const pathname = decodeURIComponent(parsed.pathname);
+
+  if (pathname === "/api/search") {
+    res.setHeader("X-Travlova-Data-Mode", "demo");
+    if (req.method !== "GET") return sendJSON(res,405,{demo:true,error:"Use GET"});
+    const result = demoSearch(String(parsed.query.type || ""), parsed.query);
+    return sendJSON(res,result.status,result.body);
+  }
+
+  if (pathname === "/api/signup") {
+    res.setHeader("X-Travlova-Data-Mode", "demo");
+    if (req.method !== "POST") return sendJSON(res,405,{demo:true,message:"Use POST"});
+    try {
+      const body = await readJSONBody(req);
+      const error = validateDemoSignup(body);
+      if (error) return sendJSON(res,400,{demo:true,accountCreated:false,message:error});
+      return sendJSON(res,200,{demo:true,accountCreated:false,message:"Validation successful. Production account creation is not enabled; no account or password was saved."});
+    } catch (error) {
+      const status = error.message === "BODY_TOO_LARGE" ? 413 : 400;
+      return sendJSON(res,status,{demo:true,message:status === 413 ? "Request body too large" : "Invalid JSON body"});
+    }
+  }
 
   // --- API: mock offers (this is the line that becomes a real partner API call later) ---
   if (pathname === "/api/offers") {
