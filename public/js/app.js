@@ -262,31 +262,67 @@ const COUNT_WORD = {
   escapes: "escapes found",
 };
 
+const loadedOffers = {};
+
+function renderStayResults(offers) {
+  const target = document.querySelector("#stays-list");
+  const count = document.querySelector("#results-count");
+  if (!target) return;
+  const destination = (document.querySelector("#stay-destination")?.value || "").trim().toLowerCase();
+  const sort = document.querySelector("#stays-sort")?.value || "recommended";
+  let visible = offers.slice();
+  if (destination) visible = visible.filter(o => (String(o.name || "") + " " + String(o.location || "")).toLowerCase().includes(destination));
+  if (sort === "price-asc") visible.sort((a,b) => Math.min(...(a.providers || []).map(p => Number(p.total ?? p.price ?? Infinity))) - Math.min(...(b.providers || []).map(p => Number(p.total ?? p.price ?? Infinity))));
+  if (sort === "rating-desc") visible.sort((a,b) => Number(b.rating || 0) - Number(a.rating || 0));
+  target.innerHTML = visible.length ? visible.map(RENDERERS.stays).join("") : '<div style="padding:28px"><h3>No sample stays match this search</h3><p>Try “Dubai” or clear the destination. This prototype does not search live hotel inventory.</p></div>';
+  if (count) { count.textContent = visible.length + " sample " + (visible.length === 1 ? "property" : "properties"); const note = document.createElement("span"); note.textContent = "Illustrative data only — taxes and availability are not verified"; count.appendChild(note); }
+}
+
 async function loadResults(type, targetSelector, countSelector) {
   const target = document.querySelector(targetSelector);
   if (!target) return;
+  const countEl = document.querySelector(countSelector);
+  target.innerHTML = '<p style="padding:30px;color:var(--muted)">Loading sample offers…</p>';
   try {
-    const res = await fetch(`/api/offers?type=${type}`);
+    const res = await fetch("/api/offers?type=" + encodeURIComponent(type));
+    if (!res.ok) throw new Error("Request failed (" + res.status + ")");
     const offers = await res.json();
-    target.innerHTML = offers.map(RENDERERS[type]).join("");
-    const countEl = document.querySelector(countSelector);
-    if (countEl) countEl.textContent = `${offers.length + 100}+ ${COUNT_WORD[type]}`;
+    if (!Array.isArray(offers)) throw new Error("Unexpected response format");
+    loadedOffers[type] = offers;
+    if (type === "stays") { renderStayResults(offers); document.querySelector("#stays-sort")?.addEventListener("change", () => renderStayResults(loadedOffers.stays || [])); }
+    else { target.innerHTML = offers.map(RENDERERS[type]).join(""); if (countEl) countEl.textContent = offers.length + " sample " + (COUNT_WORD[type] || "offers"); }
+    const status = document.querySelector("#stays-status"); if (status && type === "stays") status.textContent = "Sample data loaded. Live provider inventory is not connected.";
   } catch (e) {
-    target.innerHTML = `<p style="padding:30px;color:#6B7280">Couldn't load live results — showing cached mock data would go here. (${e.message})</p>`;
+    target.innerHTML = '<div style="padding:28px"><h3>We couldn’t load sample offers</h3><p>Please try again in a moment. No live prices or availability are being shown.</p><button type="button" class="btn-primary" id="retry-stays">Try again</button></div>';
+    document.querySelector("#retry-stays")?.addEventListener("click", () => loadResults(type, targetSelector, countSelector));
+    if (countEl) countEl.textContent = "Offers unavailable";
   }
 }
 
-/* ---- search form demo: mock data doesn't change, but we simulate a fresh search ---- */
 function wireSearchForm(formSelector) {
   const form = document.querySelector(formSelector);
   if (!form) return;
-  form.addEventListener("submit", (e) => {
+  const checkIn = form.elements.checkIn;
+  const checkOut = form.elements.checkOut;
+  const now = new Date();
+  const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0,10);
+  if (checkIn) checkIn.min = today;
+  if (checkOut) checkOut.min = today;
+  checkIn?.addEventListener("change", () => { if (checkIn.value) { checkOut.min = checkIn.value; if (checkOut.value && checkOut.value <= checkIn.value) checkOut.value = ""; } });
+  const params = new URLSearchParams(window.location.search);
+  ["destination","checkIn","checkOut","guests"].forEach(key => { const field = form.elements[key]; if (field && params.has(key)) field.value = params.get(key); });
+  form.addEventListener("submit", e => {
     e.preventDefault();
-    showToast("Searching 100+ travel sites for the best price\u2026");
-    document.querySelector(".results-main")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (!form.reportValidity()) return;
+    if (checkIn.value && checkOut.value && checkOut.value <= checkIn.value) { checkOut.setCustomValidity("Check-out must be after check-in."); checkOut.reportValidity(); checkOut.setCustomValidity(""); return; }
+    const q = new URLSearchParams();
+    ["destination","checkIn","checkOut","guests"].forEach(key => { const field = form.elements[key]; if (field && field.value) q.set(key, field.value.trim()); });
+    window.history.replaceState({}, "", window.location.pathname + "?" + q.toString());
+    if (loadedOffers.stays) renderStayResults(loadedOffers.stays);
+    const status = document.querySelector("#stays-status"); if (status) status.textContent = "Showing matching sample listings only; live inventory search is not connected.";
+    document.querySelector(".results-main")?.scrollIntoView({behavior:"smooth",block:"start"});
   });
 }
-
 function wireMobileNav() {
   const toggle = document.querySelector(".mobile-toggle");
   const nav = document.querySelector(".header-nav");
