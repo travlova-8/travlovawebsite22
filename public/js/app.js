@@ -341,7 +341,7 @@ function wireSearchForm(formSelector) {
   form.addEventListener("submit", async event => {
     event.preventDefault();
     if (!form.reportValidity()) return;
-    if (first && second && (!first.value || !second.value || second.value <= first.value)) {
+    if (first && second && (!first.value || !second.value || (page === "cars" ? second.value < first.value : second.value <= first.value))) {
       second.setCustomValidity("Choose a return/drop-off date after the first date.");
       second.reportValidity(); second.setCustomValidity(""); return;
     }
