@@ -1,62 +1,88 @@
 # Travlova
 
-موقع "ميتا سيرش" سياحي: الزائر يقارن أسعار الطيران/الفنادق/تأجير العربيات/الرحلات القصيرة (Quick Escapes) بين شركات كبيرة، يدوس على أفضل عرض، وبيتحول لموقع الشركة صاحبة العرض عشان يكمل الحجز هناك. مصدر الدخل: عمولة أفيليت ماركتينج من الشركة، مش من الزائر.
+Travlova is a travel metasearch prototype for Flights, Stays, Cars and Quick Escapes. Current inventory in `data/offers.json` is **mock data**. It is not a source of live prices, confirmed availability, or real bookings.
 
-## تشغيل المشروع محليًا
+## Run locally
 
-يحتاج فقط Node.js (18+) — من غير أي تبعيات خارجية:
+Requires Node.js 18+ and no external npm dependencies:
 
 ```bash
 node server.js
 ```
 
-بعدين افتح: `http://localhost:3000`
+Open `http://localhost:3000`.
 
-## هيكل المشروع
+## API endpoints
 
-```
-travlova/
-├── server.js                 # السيرفر: يخدم الموقع + منطق التحويل /go/:offerId/:provider
-├── data/
-│   ├── offers.json           # بيانات العروض (Mock Data حاليًا)
-│   ├── affiliateConfig.json  # إعدادات الأفيليت لكل شركة (ID تجريبي دلوقتي)
-│   └── clicks.json           # سجل الكليكات (بيتسجل تلقائيًا)
-└── public/
-    ├── index.html             # الصفحة الرئيسية — Flights
-    ├── stays.html             # Stays
-    ├── cars.html               # Cars
-    ├── escapes.html            # Quick Escapes
-    ├── privacy-policy.html     # Privacy Policy
-    ├── terms.html              # Terms of Service
-    ├── css/style.css
-    └── js/app.js
+### 1. Demo search
+
+- **Method:** `GET`
+- **Local URL:** `http://localhost:3000/api/search`
+- **Vercel URL:** `https://YOUR_DEPLOYMENT_DOMAIN/api/search`
+- **Purpose:** Validates search dates and filters sample records in `data/offers.json`. It does not call partner inventory APIs.
+
+Examples:
+
+```http
+GET /api/search?type=stays&destination=Dubai&checkIn=2026-11-10&checkOut=2026-11-14&adults=2&rooms=1
+GET /api/search?type=flights&origin=Cairo&destination=Dubai&departDate=2026-11-10&returnDate=2026-11-14&passengers=2
+GET /api/search?type=cars&pickupLocation=Dubai&pickupDate=2026-11-10&dropoffDate=2026-11-14&pickupTime=10%3A00&dropoffTime=10%3A00
+GET /api/search?type=escapes&departureCity=Cairo&departDate=2026-11-10&returnDate=2026-11-13&budget=500
 ```
 
-## إزاي نظام التحويل شغال (Redirect)
+Success response shape:
 
-لما تدوس "View Deal" أو "Book Now"، بتروح لـ `/go/<offerId>/<provider>` في السيرفر بتاعك، اللي بيعمل بالظبط:
+```json
+{
+  "demo": true,
+  "source": "data/offers.json",
+  "liveInventory": false,
+  "query": { "type": "stays" },
+  "count": 4,
+  "results": []
+}
+```
 
-1. يسجل الكليك في `data/clicks.json` (offer id, provider, price, IP, وقت) — **قبل** ما يحول الزائر
-2. يجيب الـ affiliate ID بتاعك من `data/affiliateConfig.json` (متخزن في السيرفر بس، مش في كود الصفحة)
-3. يعمل 302 redirect لموقع الشركة الحقيقي مع الـ affiliate ID مرفق في الرابط
+The dates above are request examples only. Search rejects malformed dates, past start dates and end dates that are not after start dates. Supported types: `flights`, `stays`, `cars`, `escapes`.
 
-نفس المنطق بالظبط اللي هيشتغل بيه في الإنتاج — الفرق الوحيد إن الـ ID دلوقتي تجريبي (`travlova-demo-8842`).
+### 2. Demo registration validation
 
-## الوضع الحالي للمشروع
+- **Method:** `POST`
+- **Local URL:** `http://localhost:3000/api/signup`
+- **Vercel URL:** `https://YOUR_DEPLOYMENT_DOMAIN/api/signup`
+- **Content-Type:** `application/json`
 
-| الجزء | الحالة دلوقتي | محتاج إيه عشان يبقى حقيقي |
-|---|---|---|
-| الديزاين والواجهة | جاهز 100% ومطابق للتصميم | لا شيء — جاهز |
-| البحث والمقارنة | بيانات تجريبية (Mock) في `data/offers.json` | الانضمام لبرامج الأفيليت + استبدال هذا الملف بنداء حقيقي لكل API |
-| نظام الـ Redirect | شغال بالكامل بنفس منطق الإنتاج | استبدال IDs التجريبية في `affiliateConfig.json` بالـ IDs الحقيقية |
-| تسجيل الكليكات | شغال، بيتسجل في `data/clicks.json` | الانتقال لقاعدة بيانات حقيقية (Postgres) قبل الإطلاق |
-| صفحتي Privacy Policy / Terms | جاهزتين وموجودتين في الفوتر وكل صفحة | راجعهم مع محامي قبل الإطلاق الرسمي، وحدّث بيانات التواصل |
-| استضافة الموقع | لسه محلي على جهازك | رفعه على Render/Railway (السيرفر) + Netlify/Vercel أو نفس السيرفر لو خدم الملفات الثابتة |
+Example request:
 
-## الخطوات الجاية
+```json
+{
+  "fullName": "Example Traveller",
+  "email": "traveller@example.com",
+  "country": "DE",
+  "password": "Use-a-unique-demo-password-123",
+  "termsAccepted": true
+}
+```
 
-1. سجّل في Travelpayouts و Booking.com Affiliate Partner (أسهل اتنين للبداية)
-2. راجع صفحتي Privacy Policy و Terms of Service وحدّث بيانات التواصل (مطلوبين في كل طلبات الانضمام)
-3. ارفع الموقع لايف على استضافة حقيقية
-4. بعد الموافقة، استبدل `data/offers.json` بنداء حقيقي لـ API كل شركة، وحدّث `data/affiliateConfig.json` بالـ IDs الحقيقية
-5. قبل الإطلاق النهائي، انقل تسجيل الكليكات من `data/clicks.json` لقاعدة بيانات حقيقية
+This endpoint validates the fields and returns a demo response. It does **not** create an account, store the email, hash/store the password, or implement authentication. Do not use a real or reused password. Production signup requires a real identity/authentication provider, database, email verification, rate limiting, abuse protection, and reviewed privacy/security practices.
+
+### 3. Existing offers endpoint
+
+- **Method:** `GET`
+- **URL:** `/api/offers?type=stays` (also flights, cars, escapes)
+- **Source:** `data/offers.json`
+- **Status:** mock/sample data only.
+
+### 4. Existing click log
+
+- **Method:** `GET`
+- **URL:** `/api/clicks`
+- **Note:** Local JSON-file logging is for prototype testing only; move to a database and review privacy/retention before launch.
+
+## Currency and language controls
+
+Currency options: USD, EUR, GBP, EGP, RUB, PLN, HUF and BYN. They are intended to cover the current target markets. The current display conversion rates are fixed demo values in `public/js/app.js`, not live foreign-exchange rates; do not use them for accounting or quote final booking prices. Language preference options: English, German, Russian, Hungarian, Belarusian, Polish, Italian and Arabic. The preference is saved locally, but full translation is not yet implemented.
+
+## Deployment / integration
+
+The Vercel-style API handlers are in `api/search.js`, `api/signup.js`, and `api/offers.js`. The no-dependency local server implements matching demo routes in `server.js`. Replace mock search data with approved provider APIs only after affiliate/API access is granted, and keep API keys on the server in environment variables. Never put partner secrets in frontend JavaScript.
