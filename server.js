@@ -234,8 +234,11 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 200, OFFERS);
   }
 
-  // --- API: click log, for your own reconciliation against partner dashboards ---
+  // --- Private click log: never expose visitor IP addresses/user agents publicly ---
   if (pathname === "/api/clicks") {
+    const expected = process.env.TRAVLOVA_ADMIN_TOKEN;
+    const supplied = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+    if (!expected || !supplied || supplied !== expected) return sendJSON(res, 404, {error:"Not found"});
     try {
       const clicks = JSON.parse(fs.readFileSync(CLICKS_PATH, "utf8"));
       return sendJSON(res, 200, clicks);
