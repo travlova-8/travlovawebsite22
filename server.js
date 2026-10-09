@@ -83,7 +83,8 @@ function demoSearch(type, query) {
   if (start && !validISODate(start)) return {status:400,body:{demo:true,error:"Invalid start date"}};
   if (end && !validISODate(end)) return {status:400,body:{demo:true,error:"Invalid end date"}};
   if (start && start < new Date().toISOString().slice(0,10)) return {status:400,body:{demo:true,error:"Dates must not be in the past"}};
-  if (start && end && end <= start) return {status:400,body:{demo:true,error:"End date must be after start date"}};
+  if (start && end && (type === "cars" ? end < start : end <= start)) return {status:400,body:{demo:true,error:"End date must be after start date"}};
+  if (type === "cars" && start === end && query.pickupTime && query.dropoffTime && query.dropoffTime <= query.pickupTime) return {status:400,body:{demo:true,error:"Drop-off time must be later than pick-up time"}};
   const destination = String(query.destination || query.pickupLocation || query.departureCity || "").trim().toLowerCase();
   const origin = String(query.origin || "").trim().toLowerCase();
   let results = OFFERS[type].slice();
