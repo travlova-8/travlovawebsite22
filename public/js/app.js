@@ -329,14 +329,14 @@ function wireSearchForm(formSelector) {
     first.addEventListener("change", () => {
       if (!first.value) return;
       second.min = first.value;
-      if (second.value && second.value <= first.value) second.value = "";
+      if (second.value && (page === "cars" ? second.value < first.value : second.value <= first.value)) second.value = "";
     });
   }
   const params = new URLSearchParams(window.location.search);
   for (const [key,value] of params.entries()) if (form.elements[key]) form.elements[key].value = value;
   if (first && second) {
     if (first.value) second.min = first.value;
-    if (first.value && second.value && second.value <= first.value) second.value = "";
+    if (first.value && second.value && (page === "cars" ? second.value < first.value : second.value <= first.value)) second.value = "";
   }
   form.addEventListener("submit", async event => {
     event.preventDefault();
@@ -394,10 +394,12 @@ function wirePreferences() {
       if (Object.keys(loadedOffers).length) {
         const page = document.body.dataset.page;
         const list = document.querySelector(({flights:"#flights-list",stays:"#stays-list",cars:"#cars-list",escapes:"#escapes-list"})[page]);
-        if (list && loadedOffers[page]) list.innerHTML = loadedOffers[page].map(RENDERERS[page]).join("");
+        if (list && loadedOffers[page]) { if (page === "stays") renderStayResults(loadedOffers.stays); else list.innerHTML = loadedOffers[page].map(RENDERERS[page]).join(""); }
       }
     });
   }
+  const page = document.body.dataset.page;
+  if (loadedOffers[page] && RENDERERS[page]) { const list = document.querySelector(({flights:"#flights-list",stays:"#stays-list",cars:"#cars-list",escapes:"#escapes-list"})[page]); if (list) { if (page === "stays") renderStayResults(loadedOffers.stays); else list.innerHTML = loadedOffers[page].map(RENDERERS[page]).join(""); } }
   if (language) {
     const saved = localStorage.getItem("travlova-language");
     if (supportedLanguages.includes(saved)) language.value = saved;
