@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create your Travlova account</title>
+<meta name="description" content="Create a Travlova account to prepare for saved trips and travel preferences.">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body data-page="signup">
+<header class="site-header"><div class="container">
+<a href="/index.html" class="logo">Trav<span class="dot"></span>ova</a>
+<div class="header-actions">
+<label class="preference-control"><span>Currency</span><select id="currency-select" aria-label="Display currency"><option value="USD">USD — US Dollar</option><option value="EUR">EUR — Euro</option><option value="GBP">GBP — British Pound</option><option value="EGP">EGP — Egyptian Pound</option><option value="RUB">RUB — Russian Ruble</option><option value="PLN">PLN — Polish Złoty</option><option value="HUF">HUF — Hungarian Forint</option><option value="BYN">BYN — Belarusian Ruble</option></select></label>
+<label class="preference-control"><span>Language</span><select id="language-select" aria-label="Preferred language"><option value="en">English</option><option value="de">Deutsch</option><option value="ru">Русский</option><option value="hu">Magyar</option><option value="be">Беларуская</option><option value="pl">Polski</option><option value="it">Italiano</option><option value="ar">العربية</option></select></label>
+</div></div></header>
+<main class="auth-shell"><section class="auth-card">
+<a href="/index.html" style="font-size:13px;color:var(--purple-700);text-decoration:none">← Back to Travlova</a>
+<h1 style="margin-top:18px">Create your account</h1>
+<p class="auth-intro">Keep your travel preferences in one place. Account creation is in demo mode and does not create or save an account yet.</p>
+<div id="signup-message" class="auth-message" role="status" aria-live="polite" hidden></div>
+<form id="signup-form" class="auth-form">
+<div class="auth-field"><label for="fullName">Full name</label><input id="fullName" name="fullName" type="text" autocomplete="name" minlength="2" maxlength="80" required placeholder="Your full name"></div>
+<div class="auth-field"><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" maxlength="254" required placeholder="you@example.com"></div>
+<div class="auth-field"><label for="country">Country or market</label><select id="country" name="country" required><option value="">Select your country</option><option value="EG">Egypt</option><option value="DE">Germany</option><option value="RU">Russia</option><option value="HU">Hungary</option><option value="BY">Belarus</option><option value="PL">Poland</option><option value="IT">Italy</option><option value="GB">United Kingdom</option><option value="OTHER">Other</option></select></div>
+<div class="auth-field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required aria-describedby="password-help" placeholder="At least 12 characters"><small id="password-help" style="font-weight:400;color:var(--muted)">Use 12+ characters. Do not reuse a password from another site.</small></div>
+<div class="auth-field"><label for="confirmPassword">Confirm password</label><input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required placeholder="Enter your password again"></div>
+<label class="auth-consent"><input type="checkbox" name="termsAccepted" required><span>I agree to the <a href="/terms.html">Terms of Service</a> and acknowledge the <a href="/privacy-policy.html">Privacy Policy</a>.</span></label>
+<button class="btn-primary" type="submit" id="signup-submit">Create demo account</button>
+<p class="auth-links">Already have an account? <a href="/signup.html#signup-form">Sign-in is not enabled yet.</a></p>
+</form>
+</section></main>
+<p class="prototype-note">Prototype only. Do not submit a password you use elsewhere. This demo endpoint validates fields but does not persist accounts or passwords.</p>
+<script src="/js/app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.querySelector("#signup-form");
+  const message = document.querySelector("#signup-message");
+  const password = document.querySelector("#password");
+  const confirm = document.querySelector("#confirmPassword");
+  confirm.addEventListener("input", () => confirm.setCustomValidity(confirm.value && confirm.value !== password.value ? "Passwords do not match." : ""));
+  password.addEventListener("input", () => confirm.setCustomValidity(confirm.value && confirm.value !== password.value ? "Passwords do not match." : ""));
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!form.reportValidity()) return;
+    if (password.value !== confirm.value) { confirm.setCustomValidity("Passwords do not match."); confirm.reportValidity(); confirm.setCustomValidity(""); return; }
+    const button = document.querySelector("#signup-submit");
+    button.disabled = true; button.textContent = "Validating…";
+    message.hidden = false; message.dataset.kind = "info"; message.textContent = "Validating your details with the demo API…";
+    try {
+      const response = await fetch("/api/signup", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fullName:form.elements.fullName.value,email:form.elements.email.value,country:form.elements.country.value,password:password.value,termsAccepted:form.elements.termsAccepted.checked})});
+      const data = await response.json();
+      message.dataset.kind = response.ok ? "success" : "error";
+      message.textContent = data.message || "The demo request could not be completed.";
+      if (data.demo) message.textContent += " No account was created; the submitted password was not stored.";
+    } catch {
+      message.dataset.kind = "error"; message.textContent = "Could not reach the demo API. Please try again.";
+    } finally { button.disabled = false; button.textContent = "Create demo account"; }
+  });
+});
+</script>
+</body></html>
