@@ -69,6 +69,12 @@ function readJSONBody(req, maxBytes = 16384) {
 function validISODate(value) {
   return typeof value === "string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value;
 }
+function matchesAny(item, query) {
+  const route = item.route || {};
+  const haystack = [item.name,item.location,item.type,item.destination,route.toCity,route.toCode,route.to,route.fromCity,route.fromCode,route.from].filter(Boolean).join(" ").toLowerCase();
+  const tokens = String(query).replace(/\\([^)]*\\)/g, " ").split(/[^a-z0-9]+/i).filter(Boolean);
+  return tokens.length === 0 || tokens.some(token => haystack.includes(token));
+}
 function demoSearch(type, query) {
   const allowed = ["flights","stays","cars","escapes"];
   if (!allowed.includes(type)) return { status:400, body:{demo:true,error:"type must be flights, stays, cars or escapes"} };
@@ -81,13 +87,10 @@ function demoSearch(type, query) {
   const destination = String(query.destination || query.pickupLocation || query.departureCity || "").trim().toLowerCase();
   const origin = String(query.origin || "").trim().toLowerCase();
   let results = OFFERS[type].slice();
-  if (destination) results = results.filter(item => {
-    const route = item.route || {};
-    return [item.name,item.location,item.type,item.destination,route.toCity,route.toCode,route.to].filter(Boolean).join(" ").toLowerCase().includes(destination);
-  });
+  if (destination && type !== "cars") results = results.filter(item => matchesAny(item,destination));
   if (origin && type === "flights") results = results.filter(item => {
     const route = item.route || {};
-    return [route.fromCity,route.fromCode,route.from].filter(Boolean).join(" ").toLowerCase().includes(origin);
+    return matchesAny({route},origin);
   });
   return {status:200,body:{demo:true,source:"data/offers.json",liveInventory:false,query:{type,...query},count:results.length,results}};
 }
@@ -226,7 +229,8 @@ const server = http.createServer(async (req, res) => {
   // --- API: mock offers (this is the line that becomes a real partner API call later) ---
   if (pathname === "/api/offers") {
     const type = parsed.query.type;
-    if (type && OFFERS[type]) return sendJSON(res, 200, OFFERS[type]);
+    if (type && !Object.prototype.hasOwnProperty.call(OFFERS, type)) return sendJSON(res, 400, {error:"Unsupported offer type"});
+    if (type) return sendJSON(res, 200, OFFERS[type]);
     return sendJSON(res, 200, OFFERS);
   }
 
