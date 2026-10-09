@@ -83,6 +83,6 @@ This endpoint validates the fields and returns a demo response. It does **not** 
 
 Currency options: USD, EUR, GBP, EGP, RUB, PLN, HUF and BYN. They are intended to cover the current target markets. The current display conversion rates are fixed demo values in `public/js/app.js`, not live foreign-exchange rates; do not use them for accounting or quote final booking prices. Language preference options: English, German, Russian, Hungarian, Belarusian, Polish, Italian and Arabic. The preference is saved locally, but full translation is not yet implemented.
 
-## Deployment / integration
+## Security note\n\nThe local `/api/clicks` endpoint is protected by the `TRAVLOVA_ADMIN_TOKEN` environment variable and returns 404 unless an `Authorization: Bearer <token>` header matches. Set a long random secret in your server environment; never put it in frontend code or commit it. This local-server protection does not automatically protect any separately deployed serverless route.\n\n## Deployment / integration
 
 The Vercel-style API handlers are in `api/search.js`, `api/signup.js`, and `api/offers.js`. The no-dependency local server implements matching demo routes in `server.js`. Replace mock search data with approved provider APIs only after affiliate/API access is granted, and keep API keys on the server in environment variables. Never put partner secrets in frontend JavaScript.
