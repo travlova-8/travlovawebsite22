@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   full_name VARCHAR(80) NOT NULL,
   email VARCHAR(254) NOT NULL,
-  country CHAR(5) NOT NULL,
+  country VARCHAR(5) NOT NULL,
   password_hash TEXT NOT NULL,
   email_verified_at TIMESTAMPTZ,
   session_version INTEGER NOT NULL DEFAULT 0 CHECK (session_version >= 0),
