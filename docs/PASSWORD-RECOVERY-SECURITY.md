@@ -23,3 +23,15 @@ The current project is a Node.js static-site prototype. `POST /api/signup` valid
 ## Current state of this PR
 
 The page provides the account-recovery UX and calls the intended API contract. The API handlers deliberately fail closed until a real user store, distributed atomic store/rate limiter, password hasher, mail sender, and session revocation mechanism are wired in. Do not advertise account recovery as production-ready until those dependencies and tests are implemented. This is intentional: an in-memory demo or a fake success response would violate the security requirements above.
+
+
+## Sign-in and registration status
+
+- `public/login.html` is the new responsive sign-in experience. It submits credentials only to `POST /api/auth/login` and does not store credentials in browser storage.
+- `api/auth/login.js` and the local `server.js` route intentionally return HTTP 503 until a real user repository, password-hash verifier, and secure session issuer are configured. This prevents the UI from pretending a user has authenticated.
+- `public/signup.html` and `api/signup.js` remain demo validation only; they do not create a durable account. The signup page now links to the sign-in page, and the homepage exposes a sign-in link.
+- The OTP endpoints remain fail-closed placeholders. None of the OTP security properties listed above should be treated as implemented until the production adapters and automated tests exist.
+
+## Required configuration before production
+
+The deployment must provide a persistent user database, a vetted password-hashing implementation, an atomic distributed store and rate limiter, a transactional email provider, secure HTTP-only session cookies or equivalent refresh-token rotation, CSRF protections where applicable, session revocation, secret management, and structured security monitoring that redacts credentials. Do not enable the endpoints by simply changing the 503 responses.
