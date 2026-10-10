@@ -101,7 +101,7 @@ function validateDemoSignup(body) {
   const password = typeof body.password === "string" ? body.password : "";
   const country = typeof body.country === "string" ? body.country : "";
   if (fullName.length < 2 || fullName.length > 80) return "Full name must be 2–80 characters";
-  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Enter a valid email address";
+      if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return sendJSON(res, 400, { message: "Enter a valid email address" });
   if (!["EG","DE","RU","HU","BY","PL","IT","GB","OTHER"].includes(country)) return "Choose a supported country";
   if (password.length < 12 || password.length > 128) return "Password must be 12–128 characters";
   if (body.termsAccepted !== true) return "Please accept the Terms of Service";
@@ -213,19 +213,52 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res,result.status,result.body);
   }
 
+  if (pathname.startsWith("/api/password-reset/")) {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Pragma", "no-cache");
+    if (req.method !== "POST") return sendJSON(res, 405, { message: "Use POST" });
+    // Fail closed until a persistent user store, atomic OTP store, mailer,
+    // password hasher and session-revocation adapter are configured.
+    return sendJSON(res, 503, { message: "Account recovery is not available yet. Please try again later." });
+  }
+
+  if (pathname === "/api/auth/login") {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Pragma", "no-cache");
+    if (req.method !== "POST") return sendJSON(res, 405, { message: "Use POST" });
+    return sendJSON(res, 503, { message: "Sign-in is not available yet. Please try again later." });
+  }
+
   if (pathname === "/api/signup") {
-    res.setHeader("X-Travlova-Data-Mode", "demo");
-    if (req.method !== "POST") return sendJSON(res,405,{demo:true,message:"Use POST"});
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    if (req.method !== "POST") return sendJSON(res, 405, { message: "Use POST" });
     try {
       const body = await readJSONBody(req);
-      const error = validateDemoSignup(body);
-      if (error) return sendJSON(res,400,{demo:true,accountCreated:false,message:error});
-      return sendJSON(res,200,{demo:true,accountCreated:false,message:"Validation successful. Production account creation is not enabled; no account or password was saved."});
+      const email = typeof body.email === "string" ? body.email.trim() : "";
+      const fullName = typeof body.fullName === "string" ? body.fullName.trim() : "";
+      const password = typeof body.password === "string" ? body.password : "";
+      const country = typeof body.country === "string" ? body.country : "";
+      if (fullName.length < 2 || fullName.length > 80) return sendJSON(res, 400, { message: "Full name must be 2–80 characters" });
+      if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return sendJSON(res, 400, { message: "Enter a valid email address" });
+      if (!["EG","DE","RU","HU","BY","PL","IT","GB","OTHER"].includes(country)) return sendJSON(res, 400, { message: "Choose a supported country" });
+      const { validatePassword } = require("./lib/auth/password");
+      const passwordError = validatePassword(password);
+      if (passwordError) return sendJSON(res, 400, { message: passwordError });
+      if (body.termsAccepted !== true) return sendJSON(res, 400, { message: "Please accept the Terms of Service" });
+      const { createUser } = require("./lib/auth/user-repository");
+      const user = await createUser({ fullName, email, country, password });
+      return sendJSON(res, 201, { accountCreated: true, authenticated: false, message: "Your account was created. Sign-in will be enabled after secure sessions are configured.", user: { id: user.id, fullName: user.full_name, email: user.email, country: user.country } });
     } catch (error) {
-      const status = error.message === "BODY_TOO_LARGE" ? 413 : 400;
-      return sendJSON(res,status,{demo:true,message:status === 413 ? "Request body too large" : "Invalid JSON body"});
+      if (error && error.code === "23505") return sendJSON(res, 409, { message: "An account with this email may already exist. Try signing in or recovering your account." });
+      if (error && error.message === "BODY_TOO_LARGE") return sendJSON(res, 413, { message: "Request body too large" });
+      if (error && error.message === "INVALID_JSON") return sendJSON(res, 400, { message: "Invalid JSON body" });
+      if (error && error.code === "AUTH_DATABASE_NOT_CONFIGURED") return sendJSON(res, 503, { message: "Account creation is not configured for this Preview deployment yet." });
+      console.error("Travlova account creation failed", error && error.code ? { code: error.code } : { code: "UNKNOWN" });
+      return sendJSON(res, 503, { message: "We could not create your account right now. Please try again later." });
     }
   }
+
 
   // --- API: mock offers (this is the line that becomes a real partner API call later) ---
   if (pathname === "/api/offers") {
