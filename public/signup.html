@@ -16,7 +16,7 @@
 <main class="auth-shell"><section class="auth-card">
 <a href="/index.html" style="font-size:13px;color:var(--purple-700);text-decoration:none">← Back to Travlova</a>
 <h1 style="margin-top:18px">Create your account</h1>
-<p class="auth-intro">Keep your travel preferences in one place. Account creation is in demo mode and does not create or save an account yet.</p>
+<p class="auth-intro">Keep your travel preferences in one place. Create an account with a unique password. Your password is stored only as a secure Argon2id hash.</p>
 <div id="signup-message" class="auth-message" role="status" aria-live="polite" hidden></div>
 <form id="signup-form" class="auth-form">
 <div class="auth-field"><label for="fullName">Full name</label><input id="fullName" name="fullName" type="text" autocomplete="name" minlength="2" maxlength="80" required placeholder="Your full name"></div>
@@ -25,11 +25,11 @@
 <div class="auth-field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required aria-describedby="password-help" placeholder="At least 12 characters"><small id="password-help" style="font-weight:400;color:var(--muted)">Use 12+ characters. Do not reuse a password from another site.</small></div>
 <div class="auth-field"><label for="confirmPassword">Confirm password</label><input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required placeholder="Enter your password again"></div>
 <label class="auth-consent"><input type="checkbox" name="termsAccepted" required><span>I agree to the <a href="/terms.html">Terms of Service</a> and acknowledge the <a href="/privacy-policy.html">Privacy Policy</a>.</span></label>
-<button class="btn-primary" type="submit" id="signup-submit">Create demo account</button>
+<button class="btn-primary" type="submit" id="signup-submit">Create account</button>
 <p class="auth-links"><a href="/forgot-password.html">Forgot your password?</a></p><p class="auth-links">Already have an account? <a href="/login.html">Sign in</a></p>
 </form>
 </section></main>
-<p class="prototype-note">Prototype only. Do not submit a password you use elsewhere. This demo endpoint validates fields but does not persist accounts or passwords.</p>
+<p class="prototype-note">Preview authentication foundation. Accounts are stored in the configured Neon database with Argon2id password hashes. Sign-in remains disabled until secure session management is implemented.</p>
 <script src="/js/app.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -44,17 +44,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!form.reportValidity()) return;
     if (password.value !== confirm.value) { confirm.setCustomValidity("Passwords do not match."); confirm.reportValidity(); confirm.setCustomValidity(""); return; }
     const button = document.querySelector("#signup-submit");
-    button.disabled = true; button.textContent = "Validating…";
-    message.hidden = false; message.dataset.kind = "info"; message.textContent = "Validating your details with the demo API…";
+    button.disabled = true; button.textContent = "Creating account…";
+    message.hidden = false; message.dataset.kind = "info"; message.textContent = "Creating your account securely…";
     try {
       const response = await fetch("/api/signup", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fullName:form.elements.fullName.value,email:form.elements.email.value,country:form.elements.country.value,password:password.value,termsAccepted:form.elements.termsAccepted.checked})});
       const data = await response.json();
       message.dataset.kind = response.ok ? "success" : "error";
-      message.textContent = data.message || "The demo request could not be completed.";
-      if (data.demo) message.textContent += " No account was created; the submitted password was not stored.";
+      message.textContent = data.message || "The request could not be completed.";
+      if (response.ok && data.accountCreated) { message.dataset.kind = "success"; form.reset(); message.textContent = data.message; }
     } catch {
       message.dataset.kind = "error"; message.textContent = "Could not reach the demo API. Please try again.";
-    } finally { button.disabled = false; button.textContent = "Create demo account"; }
+    } finally { button.disabled = false; button.textContent = "Create account"; }
   });
 });
 </script>
