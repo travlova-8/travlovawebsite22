@@ -213,7 +213,16 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res,result.status,result.body);
   }
 
-  if (pathname.startsWith("/api/password-reset/")) {\n    res.setHeader("Cache-Control", "no-store");\n    res.setHeader("Pragma", "no-cache");\n    if (req.method !== "POST") return sendJSON(res, 405, { message: "Use POST" });\n    // Fail closed until a persistent user store, atomic OTP store, mailer,\n    // password hasher and session-revocation adapter are configured.\n    return sendJSON(res, 503, { message: "Account recovery is not available yet. Please try again later." });\n  }\n\n  if (pathname === "/api/signup") {
+  if (pathname.startsWith("/api/password-reset/")) {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Pragma", "no-cache");
+    if (req.method !== "POST") return sendJSON(res, 405, { message: "Use POST" });
+    // Fail closed until a persistent user store, atomic OTP store, mailer,
+    // password hasher and session-revocation adapter are configured.
+    return sendJSON(res, 503, { message: "Account recovery is not available yet. Please try again later." });
+  }
+
+  if (pathname === "/api/signup") {
     res.setHeader("X-Travlova-Data-Mode", "demo");
     if (req.method !== "POST") return sendJSON(res,405,{demo:true,message:"Use POST"});
     try {
