@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Sign in securely to your Travlova account.">
+<meta name="theme-color" content="#11152f">
+<title>Sign in · Travlova</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+.login-page{min-height:calc(100vh - 72px);padding:clamp(24px,5vw,68px) 20px;display:grid;place-items:center;background:radial-gradient(ellipse at 8% 12%,rgba(124,108,240,.16),transparent 34%),radial-gradient(ellipse at 92% 90%,rgba(59,130,246,.13),transparent 32%),#f7f8ff}
+.login-layout{width:min(100%,1000px);display:grid;grid-template-columns:1.02fr .98fr;overflow:hidden;border:1px solid rgba(124,111,200,.18);border-radius:30px;background:#fff;box-shadow:0 30px 90px rgba(30,35,86,.13)}
+.login-visual{position:relative;isolation:isolate;overflow:hidden;min-height:590px;padding:clamp(28px,5vw,56px);display:flex;flex-direction:column;justify-content:space-between;color:white;background:linear-gradient(145deg,#10142e 0%,#252154 54%,#6550c7 100%)}
+.login-visual:before{content:"";position:absolute;z-index:-1;width:390px;height:390px;right:-155px;top:90px;border:1px solid rgba(255,255,255,.18);border-radius:50%;box-shadow:0 0 0 36px rgba(255,255,255,.035),0 0 0 80px rgba(255,255,255,.025),0 0 0 128px rgba(255,255,255,.018)}
+.login-visual:after{content:"";position:absolute;z-index:-1;width:230px;height:230px;right:-70px;top:170px;border-radius:50%;background:linear-gradient(140deg,rgba(255,255,255,.16),rgba(255,255,255,0));border:1px solid rgba(255,255,255,.18)}
+.login-brand{font-size:24px;font-weight:850;letter-spacing:-1px;color:white}.login-brand span{color:#b6a8ff}
+.login-kicker{font-size:11px;letter-spacing:1.8px;text-transform:uppercase;font-weight:800;color:#d5ceff}
+.login-visual h1{font-size:clamp(2.4rem,4.5vw,3.65rem);line-height:1.02;letter-spacing:-2px;margin:18px 0}
+.login-visual p{max-width:360px;font-size:14px;line-height:1.8;color:#d8d7ef}
+.login-quote{border-top:1px solid rgba(255,255,255,.16);padding-top:20px;color:#e0def6;font-size:12px;line-height:1.7}
+.login-panel{padding:clamp(28px,5vw,58px);display:flex;flex-direction:column;justify-content:center}
+.login-panel h2{font-size:28px;letter-spacing:-.8px;color:#171936;margin:0 0 9px}
+.login-subtitle{color:#777b96;font-size:13px;line-height:1.75;margin-bottom:28px}
+.login-message{padding:12px 14px;border-radius:12px;background:#f1efff;color:#5144a5;font-size:12px;line-height:1.65;margin-bottom:16px}.login-message[hidden]{display:none}
+.login-panel .auth-field{margin-bottom:17px}.login-panel .auth-field input{padding:14px;border-radius:13px;background:#fbfbff;border-color:#e7e7f2}
+.login-submit{width:100%;border:0;border-radius:13px;padding:14px 18px;background:linear-gradient(110deg,#5d55db,#8861e8);color:#fff;font:750 13px var(--font-body);box-shadow:0 9px 22px rgba(101,82,213,.22);cursor:pointer;transition:transform .2s,box-shadow .2s}
+.login-submit:hover{transform:translateY(-1px);box-shadow:0 12px 26px rgba(101,82,213,.3)}.login-submit:disabled{opacity:.65;cursor:wait;transform:none}
+.login-links{display:flex;justify-content:space-between;gap:12px;margin:0 0 22px;font-size:12px}.login-links a,.login-footer a{color:#6656ce;font-weight:750}
+.login-divider{display:flex;align-items:center;gap:12px;margin:23px 0;color:#9b9db1;font-size:11px}.login-divider:before,.login-divider:after{content:"";height:1px;flex:1;background:#ececf5}
+.login-footer{text-align:center;color:#777b96;font-size:12px;line-height:1.8}
+.login-safety{display:flex;gap:9px;margin-top:22px;color:#8a8da4;font-size:11px;line-height:1.65}
+@media(max-width:740px){.login-layout{grid-template-columns:1fr;border-radius:24px}.login-visual{min-height:260px;padding:26px}.login-visual h1{font-size:2.3rem;max-width:440px}.login-visual p{max-width:500px}.login-visual:before{right:-200px;top:-190px}.login-visual:after{right:-130px;top:-120px}.login-quote{margin-top:26px}.login-panel{padding:28px}}
+@media(prefers-reduced-motion:reduce){.login-submit{transition:none}}
+</style>
+</head>
+<body data-page="login">
+<header class="site-header"><div class="container">
+<a href="/index.html" class="logo">Trav<span class="dot"></span>ova</a>
+<div class="header-actions">
+<label class="preference-control"><span>Currency</span><select id="currency-select" aria-label="Display currency"><option value="USD">USD — US Dollar</option><option value="EUR">EUR — Euro</option><option value="GBP">GBP — British Pound</option><option value="EGP">EGP — Egyptian Pound</option><option value="RUB">RUB — Russian Ruble</option><option value="PLN">PLN — Polish Złoty</option><option value="HUF">HUF — Hungarian Forint</option><option value="BYN">BYN — Belarusian Ruble</option></select></label>
+<label class="preference-control"><span>Language</span><select id="language-select" aria-label="Preferred language"><option value="en">English</option><option value="de">Deutsch</option><option value="ru">Русский</option><option value="hu">Magyar</option><option value="be">Беларуская</option><option value="pl">Polski</option><option value="it">Italiano</option><option value="ar">العربية</option></select></label>
+</div></div></header>
+<main class="login-page"><div class="login-layout">
+<section class="login-visual" aria-label="Welcome to Travlova">
+<a class="login-brand" href="/index.html">Travl<span>ova</span></a>
+<div><span class="login-kicker">✦ YOUR NEXT CHAPTER STARTS HERE</span><h1>Welcome back<br>to what moves you.</h1><p>Your next unforgettable stay, spontaneous escape, or journey across the world is closer than you think.</p></div>
+<div class="login-quote">One account. Your travel world.<br><strong>Compare thoughtfully. Travel confidently.</strong></div>
+</section>
+<section class="login-panel">
+<h2>Sign in to Travlova</h2><p class="login-subtitle">Pick up where your next journey begins.</p>
+<div id="login-message" class="login-message" role="status" aria-live="polite" hidden></div>
+<form id="login-form" class="auth-form">
+<div class="auth-field"><label for="login-email">Email address</label><input id="login-email" name="email" type="email" autocomplete="username" maxlength="254" required placeholder="you@example.com"></div>
+<div class="auth-field"><label for="login-password">Password</label><input id="login-password" name="password" type="password" autocomplete="current-password" maxlength="128" required placeholder="Enter your password"></div>
+<div class="login-links"><a href="/forgot-password.html">Forgot password?</a><a href="/forgot-password.html">Recover account</a></div>
+<button class="login-submit" type="submit">Sign in securely <span aria-hidden="true">↗</span></button>
+</form>
+<div class="login-divider">YOUR ACCOUNT, YOUR JOURNEY</div>
+<p class="login-footer">New to Travlova? <a href="/signup.html">Create an account</a></p>
+<div class="login-safety"><span aria-hidden="true">♧</span><span>Never share your password or recovery code. We will never ask for your password by email.</span></div>
+</section></div></main>
+<script src="/js/app.js"></script>
+<script>
+(() => {
+ const form=document.querySelector('#login-form'), message=document.querySelector('#login-message'), button=form.querySelector('button[type=submit]');
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();if(!form.reportValidity())return;
+  button.disabled=true;button.textContent='Signing in…';
+  message.hidden=false;message.textContent='Checking your account securely…';
+  try{
+   const response=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',body:JSON.stringify({email:form.elements.email.value.trim(),password:form.elements.password.value})});
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok)throw new Error(data.message||'Sign-in is temporarily unavailable. Please try again later.');
+   if(data.authenticated!==true)throw new Error('Sign-in is not configured for this deployment yet.');
+   window.location.assign(data.redirectTo||'/index.html');
+  }catch(error){message.textContent=error.message;message.dataset.kind='error'}
+  finally{button.disabled=false;button.innerHTML='Sign in securely <span aria-hidden="true">↗</span>'}
+ });
+})();
+</script>
+</body></html>
