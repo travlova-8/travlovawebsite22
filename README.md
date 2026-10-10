@@ -45,26 +45,16 @@ Success response shape:
 
 The dates above are request examples only. Search rejects malformed dates, past start dates and end dates that are not after start dates. Supported types: `flights`, `stays`, `cars`, `escapes`.
 
-### 2. Demo registration validation
+### 2. Account registration (Preview phase 1)
 
 - **Method:** `POST`
 - **Local URL:** `http://localhost:3000/api/signup`
 - **Vercel URL:** `https://YOUR_DEPLOYMENT_DOMAIN/api/signup`
 - **Content-Type:** `application/json`
 
-Example request:
+The endpoint validates the request, normalizes email addresses, hashes passwords with Argon2id, and stores user records in the Neon PostgreSQL database configured by `DATABASE_URL`. It returns account metadata only, never the password or password hash. Passwords must be 12–128 characters. The unique database constraint prevents duplicate normalized email addresses.
 
-```json
-{
-  "fullName": "Example Traveller",
-  "email": "traveller@example.com",
-  "country": "DE",
-  "password": "Use-a-unique-demo-password-123",
-  "termsAccepted": true
-}
-```
-
-This endpoint validates the fields and returns a demo response. It does **not** create an account, store the email, hash/store the password, or implement authentication. Do not use a real or reused password. Production signup requires a real identity/authentication provider, database, email verification, rate limiting, abuse protection, and reviewed privacy/security practices.
+**Important:** This is a Preview-only foundation, not complete authentication. It does not issue a login session, verify email addresses, enable password recovery, or provide distributed rate limiting yet. The sign-in API remains disabled until secure sessions are implemented. Configure a dedicated Neon Preview database and follow [the phase 1 setup guide](docs/AUTHENTICATION-PHASE-1-NEON.md). Do not test with production data or reused passwords.
 
 ### 3. Existing offers endpoint
 
