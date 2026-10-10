@@ -222,6 +222,13 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 503, { message: "Account recovery is not available yet. Please try again later." });
   }
 
+  if (pathname === "/api/auth/login") {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Pragma", "no-cache");
+    if (req.method !== "POST") return sendJSON(res, 405, { message: "Use POST" });
+    return sendJSON(res, 503, { message: "Sign-in is not available yet. Please try again later." });
+  }
+
   if (pathname === "/api/signup") {
     res.setHeader("X-Travlova-Data-Mode", "demo");
     if (req.method !== "POST") return sendJSON(res,405,{demo:true,message:"Use POST"});
