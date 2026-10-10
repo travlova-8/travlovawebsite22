@@ -101,7 +101,7 @@ function validateDemoSignup(body) {
   const password = typeof body.password === "string" ? body.password : "";
   const country = typeof body.country === "string" ? body.country : "";
   if (fullName.length < 2 || fullName.length > 80) return "Full name must be 2–80 characters";
-  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Enter a valid email address";
+      if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return sendJSON(res, 400, { message: "Enter a valid email address" });
   if (!["EG","DE","RU","HU","BY","PL","IT","GB","OTHER"].includes(country)) return "Choose a supported country";
   if (password.length < 12 || password.length > 128) return "Password must be 12–128 characters";
   if (body.termsAccepted !== true) return "Please accept the Terms of Service";
@@ -240,7 +240,7 @@ const server = http.createServer(async (req, res) => {
       const password = typeof body.password === "string" ? body.password : "";
       const country = typeof body.country === "string" ? body.country : "";
       if (fullName.length < 2 || fullName.length > 80) return sendJSON(res, 400, { message: "Full name must be 2–80 characters" });
-      if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return sendJSON(res, 400, { message: "Enter a valid email address" });
+      if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return sendJSON(res, 400, { message: "Enter a valid email address" });
       if (!["EG","DE","RU","HU","BY","PL","IT","GB","OTHER"].includes(country)) return sendJSON(res, 400, { message: "Choose a supported country" });
       const { validatePassword } = require("./lib/auth/password");
       const passwordError = validatePassword(password);
