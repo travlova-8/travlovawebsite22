@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
       message.textContent = data.message || "The request could not be completed.";
       if (response.ok && data.accountCreated) { message.dataset.kind = "success"; form.reset(); message.textContent = data.message; }
     } catch {
-      message.dataset.kind = "error"; message.textContent = "Could not reach the demo API. Please try again.";
+      message.dataset.kind = "error"; message.textContent = "Could not reach the API. Please try again.";
     } finally { button.disabled = false; button.textContent = "Create account"; }
   });
 });
