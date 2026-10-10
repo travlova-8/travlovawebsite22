@@ -559,3 +559,13 @@ img { max-width: 100%; display: block; }
 .auth-links { text-align:center; color:var(--muted); font-size:12px; }
 @media (max-width:800px) { .preference-control span { display:none; } .preference-control select { max-width:112px; min-width:80px; } .header-actions { gap:5px; } }
 @media (max-width:620px) { .header-actions { flex-wrap:wrap; justify-content:flex-end; } .preference-control select { max-width:105px; } .auth-shell { margin-top:24px; } }
+
+
+/* Account access links — shared by the homepage and auth screens */
+.header-auth-link {
+  color: var(--purple-700);
+  font-weight: 700;
+  white-space: nowrap;
+  font-size: .86rem;
+}
+.header-auth-link:hover { color: var(--purple-500); }
