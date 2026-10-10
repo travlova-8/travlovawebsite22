@@ -559,3 +559,41 @@ img { max-width: 100%; display: block; }
 .auth-links { text-align:center; color:var(--muted); font-size:12px; }
 @media (max-width:800px) { .preference-control span { display:none; } .preference-control select { max-width:112px; min-width:80px; } .header-actions { gap:5px; } }
 @media (max-width:620px) { .header-actions { flex-wrap:wrap; justify-content:flex-end; } .preference-control select { max-width:105px; } .auth-shell { margin-top:24px; } }
+
+
+/* Phase 1 visual polish: resilient hero crop, accessible focus and responsive spacing */
+.hero-inner { isolation:isolate; min-height:clamp(280px, 34vw, 430px); }
+.hero-inner img { object-position:center 52%; transform:scale(1.001); }
+.hero-scrim { z-index:0; }
+.hero-copy { z-index:1; }
+.site-header { padding-top:env(safe-area-inset-top, 0px); }
+.logo { text-decoration:none; flex-shrink:0; line-height:1; }
+.logo:focus-visible, .header-nav a:focus-visible, .tab-link:focus-visible, .btn-primary:focus-visible {
+  outline:3px solid rgba(79,70,229,.45); outline-offset:4px; border-radius:8px;
+}
+.hero-inner img { image-rendering:auto; }
+@media (min-width:1400px) {
+  .hero { max-width:1320px; }
+  .hero-inner { min-height:420px; }
+  .hero-copy { max-width:600px; padding:clamp(48px,5vw,72px); }
+}
+@media (max-width:980px) {
+  .hero { padding-inline:18px; margin-top:14px; }
+  .hero-inner { min-height:310px; }
+  .hero-copy { max-width:54%; padding:38px 28px; }
+  .hero-copy h1 { font-size:clamp(1.85rem,4vw,2.4rem); }
+  .search-card { padding-inline:18px; }
+}
+@media (max-width:620px) {
+  .hero { padding-inline:12px; margin-top:10px; }
+  .hero-inner { min-height:290px; align-items:flex-end; }
+  .hero-inner img { object-position:center; }
+  .hero-scrim { background:linear-gradient(180deg,rgba(255,255,255,.02) 0%,rgba(255,255,255,.28) 34%,rgba(255,255,255,.94) 66%,#fff 100%); }
+  .hero-copy { max-width:100%; padding:108px 18px 24px; }
+  .hero-copy h1 { font-size:clamp(1.65rem,7vw,2.05rem); line-height:1.12; }
+  .hero-copy p { font-size:.92rem; line-height:1.5; max-width:34rem; }
+  .search-card { margin-top:-20px; padding-inline:12px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { scroll-behavior:auto!important; animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; }
+}
