@@ -4,10 +4,15 @@
   "description": "Travlova — travel metasearch (Flights, Stays, Cars, Quick Escapes) with an affiliate redirect + click-logging backend.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "argon2": "^0.44.0"
   },
   "license": "UNLICENSED"
 }
