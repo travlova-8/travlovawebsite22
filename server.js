@@ -251,8 +251,8 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(res, 201, { accountCreated: true, authenticated: false, message: "Your account was created. Sign-in will be enabled after secure sessions are configured.", user: { id: user.id, fullName: user.full_name, email: user.email, country: user.country } });
     } catch (error) {
       if (error && error.code === "23505") return sendJSON(res, 409, { message: "An account with this email may already exist. Try signing in or recovering your account." });
-      if (error && error.code === "BODY_TOO_LARGE") return sendJSON(res, 413, { message: "Request body too large" });
-      if (error && error.code === "INVALID_JSON") return sendJSON(res, 400, { message: "Invalid JSON body" });
+      if (error && error.message === "BODY_TOO_LARGE") return sendJSON(res, 413, { message: "Request body too large" });
+      if (error && error.message === "INVALID_JSON") return sendJSON(res, 400, { message: "Invalid JSON body" });
       if (error && error.code === "AUTH_DATABASE_NOT_CONFIGURED") return sendJSON(res, 503, { message: "Account creation is not configured for this Preview deployment yet." });
       console.error("Travlova account creation failed", error && error.code ? { code: error.code } : { code: "UNKNOWN" });
       return sendJSON(res, 503, { message: "We could not create your account right now. Please try again later." });
